@@ -1,8 +1,8 @@
 // MQTT
-var connected_flag = 0
-var mqtt;
+var connected_flag = 0;
+var mqtt = "";
 var reconnectTimeout = 2000;
-var msg
+var map;
 
 function onConnectionLost() {
     console.log("connection lost");
@@ -19,11 +19,25 @@ function onMessageArrived(r_message) {
     out_msg = "Message received " + r_message.payloadString + "<br>";
     out_msg = out_msg + "Message received Topic " + r_message.destinationName;
     //console.log("Message received ",r_message.payloadString);
+    try {
+        var obj = JSON.parse(r_message.payloadString);
+        var latitude = obj.latitude;
+        var longitude = obj.longitude;
+        map.panTo(new L.LatLng(latitude, longitude));
+        var marker = L.marker([latitude, longitude]).addTo(map);
+        marker.bindPopup(r_message.payloadString).openPopup();
+        marker.closePopup();
+    }
+    catch (e) {
+        console.log("Error parsing JSON");
+        console.log(e);
+    }
+
     console.log(out_msg);
     document.getElementById("messages").innerHTML = out_msg;
 }
 function onConnected(recon, url) {
-    console.log(" in onConnected " + reconn);
+    console.log(" in onConnected " + recon);
 }
 function onConnect() {
     // Once a connection has been made, make a subscription and send a message.
@@ -123,7 +137,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Map
     // Calgary Map
-    var map = L.map('map').setView([51.0443701, -114.0809625], 15);
+    map = L.map('map').setView([51.0443701, -114.0809625], 15);
 
     // Token
     var token = 'pk.eyJ1IjoiemxmZG9kbyIsImEiOiJja3o2Mjlmcnowc3h1Mm5wNGJ3M2ttdnlwIn0.XCp2ooN3S1XnA6scsq0DWA';
@@ -134,11 +148,6 @@ document.addEventListener('DOMContentLoaded', function () {
         tileSize: 512,
         zoomOffset: -1,
     }).addTo(map);
-    // // Open Street
-    // var basemap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    //     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-    //     maxZoom: 18,
-    // }).addTo(map);
 
     // Geolocation
     function geoFindMe() {
